@@ -14,12 +14,16 @@ LOGIN = reverse('users:login')
 PROFILE_FOLLOW = reverse('posts:profile_follow', args=[USERNAME])
 PROFILE_UNFOLLOW = reverse('posts:profile_unfollow', args=[USERNAME])
 FOLLOW = reverse('posts:follow_index')
+REDIRECT_PROFILE_FOLLOW = f'{LOGIN}?next={PROFILE_FOLLOW}'
 
 
 class PostsURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.guest = Client()
+        cls.another = Client()
+        cls.author_client = Client()
         cls.author = User.objects.create(username=USERNAME)
         cls.user = User.objects.create_user(username='NoName')
         cls.group = Group.objects.create(
@@ -36,13 +40,9 @@ class PostsURLTests(TestCase):
         cls.REDIRECT_POST_CREATE = f'{LOGIN}?next={POST_CREATE}'
         cls.REDIRECT_POST_EDIT = f'{LOGIN}?next={cls.POST_EDIT}'
         cls.ADD_COMMENT = reverse('posts:add_comment', args=[cls.post.id])
-        cls.REDIRECT_ADD_COMMENT = f'{LOGIN}?next={cls.ADD_COMMENT}'
 
     def setUp(self):
-        self.guest = Client()
-        self.another = Client()
         self.another.force_login(self.user)
-        self.author_client = Client()
         self.author_client.force_login(self.author)
 
     def test_url_exists_at_desired_location_unauthorized_client(self):
@@ -58,10 +58,15 @@ class PostsURLTests(TestCase):
             [POST_CREATE, self.guest, 302],
             [self.POST_EDIT, self.guest, 302],
             [self.POST_EDIT, self.another, 302],
-            [self.ADD_COMMENT, self.guest, 302],
             [PROFILE_FOLLOW, self.another, 302],
             [PROFILE_UNFOLLOW, self.another, 302],
             [FOLLOW, self.another, 200],
+            [PROFILE_FOLLOW, self.author_client, 302],
+            [FOLLOW, self.author_client, 200],
+            [PROFILE_FOLLOW, self.guest, 302],
+            [PROFILE_UNFOLLOW, self.guest, 302],
+            [FOLLOW, self.guest, 302],
+
         ]
         for adress, client, code in cases:
             with self.subTest(code=code):
@@ -93,9 +98,9 @@ class PostsURLTests(TestCase):
             [POST_CREATE, self.guest, self.REDIRECT_POST_CREATE],
             [self.POST_EDIT, self.guest, self.REDIRECT_POST_EDIT],
             [self.POST_EDIT, self.another, self.POST_DETAIL],
-            [self.ADD_COMMENT, self.guest, self.REDIRECT_ADD_COMMENT],
             [PROFILE_FOLLOW, self.another, PROFILE],
             [PROFILE_UNFOLLOW, self.another, PROFILE],
+            [PROFILE_FOLLOW, self.guest, REDIRECT_PROFILE_FOLLOW],
         ]
         for adress, client, new_adress in input_data:
             with self.subTest(new_adress=new_adress):

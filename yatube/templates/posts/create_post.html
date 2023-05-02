@@ -25,15 +25,7 @@
                 </div>
               {% endfor %}
             {% endif %}
-            <form
-              method="post" enctype="multipart/form-data"
-              action=
-                {% if post %}
-                  "{% url 'posts:post_edit' post.id %}"
-                {% else %}
-                  "{% url 'posts:post_create' %}"
-                {% endif %}
-              >
+            <form method="post" enctype="multipart/form-data">
               {% csrf_token %}
               {% for field in form %} 
                 <div class="form-group row my-3">

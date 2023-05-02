@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
+from ..urls import app_name
 
 
 SLUG = 'slug'
@@ -26,5 +27,5 @@ class RouteTests(TestCase):
             with self.subTest():
                 self.assertEqual(
                     address,
-                    reverse(f'posts:{route_name}', args=arguments)
+                    reverse(f'{app_name}:{route_name}', args=arguments)
                 )

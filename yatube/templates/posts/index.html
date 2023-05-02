@@ -3,11 +3,10 @@
 {% block title %} Последние обновления на сайте {% endblock %}
 {% block header %} Последние обновления на сайте {% endblock %}
 {% block content %}
-{% include 'posts/includes/switcher.html' %}
+{% include 'posts/includes/switcher.html' with index=True %}
   {% for post in page_obj %}
-  {% include 'posts/includes/post_list.html' %}
-  {% include 'posts/includes/group.html' %}
-      {% if not forloop.last %}<hr>{% endif %}
+    {% include 'posts/includes/post_list.html' with show_group_link=True show_author_link=True %}
+    {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
   {% include 'posts/includes/paginator.html' %}
 {% endblock %} 

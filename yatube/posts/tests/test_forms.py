@@ -11,6 +11,16 @@ from ..models import User, Post, Group, Comment
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 USERNAME = 'auth'
+LOGIN = reverse('users:login')
+PATH_IMAGE = 'posts/'
+SMALL_GIF = (
+    b'\x47\x49\x46\x38\x39\x61\x02\x00'
+    b'\x01\x00\x80\x00\x00\x00\x00\x00'
+    b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+    b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+    b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+    b'\x0A\x00\x3B'
+)
 PROFILE = reverse('posts:profile', args=[USERNAME])
 POST_CREATE = reverse('posts:post_create')
 
@@ -20,6 +30,9 @@ class PostCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.guest = Client()
+        cls.another = Client()
+        cls.author_client = Client()
         cls.author = User.objects.create(username=USERNAME)
         cls.user = User.objects.create_user(username='NoName')
         cls.group_1 = Group.objects.create(
@@ -30,40 +43,27 @@ class PostCreateFormTests(TestCase):
             title=('Заголовок для тестовой группы 2'),
             slug='test_slug_2'
         )
-        cls.small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
-        cls.uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=cls.small_gif,
-            content_type='image/gif'
-        )
-        cls.small_2_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
-        cls.uploaded_2 = SimpleUploadedFile(
-            name='small_2.gif',
-            content=cls.small_2_gif,
-            content_type='image/gif'
-        )
         cls.post = Post.objects.create(
             text='Тестовый пост',
             group=cls.group_1,
             author=cls.author,
         )
+        cls.uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
+        cls.uploaded_2 = SimpleUploadedFile(
+            name='small_2.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
         cls.POST_EDIT = reverse('posts:post_edit', args=[cls.post.id])
         cls.POST_DETAIL = reverse('posts:post_detail', args=[cls.post.id])
         cls.ADD_COMMENT = reverse('posts:add_comment', args=[cls.post.id])
+        cls.REDIRECT_POST_CREATE = f'{LOGIN}?next={POST_CREATE}'
+        cls.REDIRECT_POST_EDIT = f'{LOGIN}?next={cls.POST_EDIT}'
+        cls.REDIRECT_ADD_COMMENT = f'{LOGIN}?next={cls.ADD_COMMENT}'
 
     @classmethod
     def tearDownClass(cls):
@@ -71,10 +71,7 @@ class PostCreateFormTests(TestCase):
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
-        self.guest = Client()
-        self.another = Client()
         self.another.force_login(self.user)
-        self.author_client = Client()
         self.author_client.force_login(self.author)
 
     def test_forms_create_post(self):
@@ -83,7 +80,7 @@ class PostCreateFormTests(TestCase):
         form_data = {
             'text': 'Тестовый пост 2',
             'group': self.group_1.id,
-            'image': self.uploaded_2,
+            'image': self.uploaded,
         }
         response = self.author_client.post(
             POST_CREATE,
@@ -97,7 +94,7 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author, self.author)
-        self.assertEqual(post.image.name, f'posts/img/{self.uploaded_2.name}')
+        self.assertEqual(post.image.name, PATH_IMAGE + form_data['image'].name)
 
     def test_create_post_pages_show_correct_context(self):
         """Типы полей формы create_post / post_edit / post_detail_comment
@@ -126,7 +123,7 @@ class PostCreateFormTests(TestCase):
         form_data = {
             'text': 'Измененный тестовый пост',
             'group': self.group_2.id,
-            'image': self.uploaded,
+            'image': self.uploaded_2,
         }
         response = self.author_client.post(
             self.POST_EDIT,
@@ -139,9 +136,9 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author, self.post.author)
-        self.assertEqual(post.image.name, f'posts/{self.uploaded.name}')
+        self.assertEqual(post.image, PATH_IMAGE + form_data['image'].name)
 
-    def test_forms_create_post(self):
+    def test_authorized_user_can_comment(self):
         """Авторизированный пользователь может комментировать"""
         comments = set(Comment.objects.all())
         form_data = {
@@ -158,3 +155,48 @@ class PostCreateFormTests(TestCase):
         comment = comments.pop()
         self.assertEqual(comment.text, form_data['text'])
         self.assertEqual(comment.author, self.user)
+        self.assertEqual(comment.post, self.post)
+
+    def test_an_unauthorized_user_cannot_comment(self):
+        """Неавторизированный пользователь не может комментировать."""
+        comments_count = Comment.objects.count()
+        form_data = {
+            'text': 'Тестовый комментарий',
+        }
+        response = self.guest.post(
+            self.ADD_COMMENT,
+            data=form_data,
+            follow=True
+        )
+        self.assertRedirects(response, self.REDIRECT_ADD_COMMENT)
+        self.assertEqual(Comment.objects.count(), comments_count)
+
+    def test_an_unauthorized_user_cannot_create_a_post(self):
+        """Неавторизированный пользователь не может создать пост."""
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': 'Тестовый пост',
+            'group': 'Тестовая группа',
+        }
+        response = self.guest.post(
+            POST_CREATE,
+            data=form_data,
+            follow=True
+        )
+        self.assertRedirects(response, self.REDIRECT_POST_CREATE)
+        self.assertEqual(Post.objects.count(), posts_count)
+
+    def test_an_unauthorized_user_cannot_edit_a_post(self):
+        """Неавторизированный пользователь не может редактировать пост."""
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': 'Измененный пост',
+            'group': 'Измененная группа',
+        }
+        response = self.guest.post(
+            self.POST_EDIT,
+            data=form_data,
+            follow=True
+        )
+        self.assertRedirects(response, self.REDIRECT_POST_EDIT)
+        self.assertEqual(Post.objects.count(), posts_count)

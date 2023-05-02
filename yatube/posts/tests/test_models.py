@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from ..models import User, Group, Post, Comment, Follow
-from ..models import POST_DATA
+from ..models import POST_DATA, COMMENT_DATA, FOLLOW_DATA
 
 
 class PostModelTest(TestCase):
@@ -39,13 +39,16 @@ class PostModelTest(TestCase):
                 text=self.post.text,
                 date=self.post.pub_date,
                 author=self.post.author.username,
-                argument=self.post.group),
-            self.comment: POST_DATA.format(
+                group=self.post.group),
+            self.comment: COMMENT_DATA.format(
                 text=self.comment.text,
                 date=self.comment.pub_date,
                 author=self.author_comment.username,
-                argument=self.post.text),
-            self.follow: f'{self.author_comment} подписан на {self.user}'
+                post=self.post.text),
+            self.follow: FOLLOW_DATA.format(
+                user=self.author_comment.username,
+                author=self.user.username
+            )
         }
         for object_name, expected_value in correct_object_names.items():
             with self.subTest(type(object_name).__name__):

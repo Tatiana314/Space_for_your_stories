@@ -1,5 +1,4 @@
 from django.urls import path
-from django.views.decorators.cache import cache_page
 
 from . import views
 
@@ -7,7 +6,7 @@ app_name = 'posts'
 
 
 urlpatterns = [
-    path('', cache_page(20)(views.index), name='index'),
+    path('', views.index, name='index'),
     path('group/<slug:slug>/', views.group_posts, name='group_list'),
     path('profile/<str:username>/', views.profile, name='profile'),
     path('posts/<int:post_id>/edit/', views.post_edit, name='post_edit'),

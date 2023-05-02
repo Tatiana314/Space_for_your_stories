@@ -5,28 +5,23 @@
 {% block content %}
   <div class="mb-5">
     <h3>Колличество записей: {{ author.posts.count }} </h3> 
-    <h3>Колличество подписчиков: {{ author.following.count }} </h3>    
+    <h3>Колличество комментариев: {{ author.comments.count }} </h3>    
+    <h3>Колличество подписок: {{ author.follower.count }} </h3> 
+    <h3>Колличество подписчиков: {{ author.following.count }} </h3> 
     {% if user.is_authenticated and author != user %}
       {% if following %}
-        <a
-          class="btn btn-lg btn-light"
-          href="{% url 'posts:profile_unfollow' author%}" role="button"
-        >
-          Отписаться
-        </a>
+        <a class="btn btn-lg btn-light" 
+          href="{% url 'posts:profile_unfollow' author.username %}" 
+          role="button">Отписаться</a> 
       {% else %}
-        <a
-          class="btn btn-lg btn-primary"
-          href="{% url 'posts:profile_follow' author.username %}" role="button"
-        >
-          Подписаться
-        </a>
+        <a class="btn btn-lg btn-primary"
+          href="{% url 'posts:profile_follow' author.username %}"
+          role="button">Подписаться</a>
       {% endif %}
     {% endif %}
   </div>  
   {% for post in page_obj %}
-  {% include 'posts/includes/post_list.html' %}
-  {% include 'posts/includes/group.html' %}
+    {% include 'posts/includes/post_list.html' with show_group_link=True %}
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
   {% include 'posts/includes/paginator.html' %}   

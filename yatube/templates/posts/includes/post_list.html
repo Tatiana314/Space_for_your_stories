@@ -1,10 +1,12 @@
 {% load thumbnail %}
 <article>
   <ul>
-    <li>
-      Автор: {{ post.author.get_full_name }} 
-      <a href="{% url 'posts:profile' post.author %}">Все записи авторая</a>
-    </li>
+    {% if show_author_link %}
+      <li>
+        Автор: {{ post.author.get_full_name }} 
+        <a href="{% url 'posts:profile' post.author %}">Все записи авторая</a>
+      </li>
+    {% endif %} 
     <li>
       Дата публикации: {{ post.pub_date|date:"d E Y" }}
     </li>
@@ -14,4 +16,11 @@
   {% endthumbnail %}
   {{ post.text|linebreaks }}
   <a href="{% url 'posts:post_detail' post.pk %}">подробная информация </a>
-</article> 
+  <p>
+    {% if show_group_link %}
+      {% if post.group %}   
+        <a href="{% url 'posts:group_list' post.group.slug %}">{{post.group}}</a>
+      {% endif %}
+    {% endif %}  
+  </p>
+</article>

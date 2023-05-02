@@ -5,7 +5,7 @@
 {% block content %}
   <p>{{ group.description|linebreaks }}</p>
   {% for post in page_obj %}
-  {% include 'posts/includes/post_list.html' %}
+    {% include 'posts/includes/post_list.html' with show_author_link=True %}
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
   {% include 'posts/includes/paginator.html' %}   
