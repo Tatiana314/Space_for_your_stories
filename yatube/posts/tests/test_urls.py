@@ -15,6 +15,8 @@ PROFILE_FOLLOW = reverse('posts:profile_follow', args=[USERNAME])
 PROFILE_UNFOLLOW = reverse('posts:profile_unfollow', args=[USERNAME])
 FOLLOW = reverse('posts:follow_index')
 REDIRECT_PROFILE_FOLLOW = f'{LOGIN}?next={PROFILE_FOLLOW}'
+REDIRECT_FOLLOW = f'{LOGIN}?next={FOLLOW}'
+REDIRECT_PROFILE_UNFOLLOW = f'{LOGIN}?next={PROFILE_UNFOLLOW}'
 
 
 class PostsURLTests(TestCase):
@@ -39,7 +41,6 @@ class PostsURLTests(TestCase):
         cls.POST_DETAIL = reverse('posts:post_detail', args=[cls.post.id])
         cls.REDIRECT_POST_CREATE = f'{LOGIN}?next={POST_CREATE}'
         cls.REDIRECT_POST_EDIT = f'{LOGIN}?next={cls.POST_EDIT}'
-        cls.ADD_COMMENT = reverse('posts:add_comment', args=[cls.post.id])
 
     def setUp(self):
         self.another.force_login(self.user)
@@ -53,23 +54,23 @@ class PostsURLTests(TestCase):
             [PROFILE, self.guest, 200],
             [self.POST_DETAIL, self.guest, 200],
             [UNEXIST_PAGE, self.guest, 404],
-            [self.POST_EDIT, self.author_client, 200],
             [POST_CREATE, self.another, 200],
             [POST_CREATE, self.guest, 302],
+            [self.POST_EDIT, self.author_client, 200],
             [self.POST_EDIT, self.guest, 302],
             [self.POST_EDIT, self.another, 302],
             [PROFILE_FOLLOW, self.another, 302],
-            [PROFILE_UNFOLLOW, self.another, 302],
-            [FOLLOW, self.another, 200],
             [PROFILE_FOLLOW, self.author_client, 302],
-            [FOLLOW, self.author_client, 200],
             [PROFILE_FOLLOW, self.guest, 302],
-            [PROFILE_UNFOLLOW, self.guest, 302],
+            [FOLLOW, self.another, 200],
             [FOLLOW, self.guest, 302],
+            [PROFILE_UNFOLLOW, self.another, 302],
+            [PROFILE_UNFOLLOW, self.guest, 302],
+            [PROFILE_UNFOLLOW, self.author_client, 404]
 
         ]
         for adress, client, code in cases:
-            with self.subTest(code=code):
+            with self.subTest(code=code, adress=adress):
                 self.assertEqual(
                     client.get(adress).status_code, code
                 )
@@ -101,11 +102,13 @@ class PostsURLTests(TestCase):
             [PROFILE_FOLLOW, self.another, PROFILE],
             [PROFILE_UNFOLLOW, self.another, PROFILE],
             [PROFILE_FOLLOW, self.guest, REDIRECT_PROFILE_FOLLOW],
+            [PROFILE_FOLLOW, self.author_client, PROFILE],
+            [FOLLOW, self.guest, REDIRECT_FOLLOW],
+            [PROFILE_UNFOLLOW, self.guest, REDIRECT_PROFILE_UNFOLLOW],
         ]
         for adress, client, new_adress in input_data:
-            with self.subTest(new_adress=new_adress):
+            with self.subTest(adress=adress, new_adress=new_adress):
                 self.assertRedirects(
                     client.get(adress, follow=True),
-                    new_adress,
-                    status_code=302
+                    new_adress
                 )

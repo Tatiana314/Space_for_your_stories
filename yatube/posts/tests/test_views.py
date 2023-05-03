@@ -35,6 +35,8 @@ class PostPagesTests(TestCase):
         cls.author_client = Client()
         cls.author = User.objects.create(username=USERNAME)
         cls.user = User.objects.create_user(username='NoName')
+        cls.another.force_login(cls.user)
+        cls.author_client.force_login(cls.author)
         cls.group = Group.objects.create(
             title=('Тестовая группа'),
             slug=SLUG,
@@ -59,8 +61,6 @@ class PostPagesTests(TestCase):
 
     def setUp(self):
         cache.clear()
-        self.another.force_login(self.user)
-        self.author_client.force_login(self.author)
 
     def test_index_group_detail_profile_pages_show_correct_context(self):
         """Шаблоны index, group_list, profile, post_detail, follow_index"""
@@ -94,11 +94,15 @@ class PostPagesTests(TestCase):
                 self.assertEqual(post.image, self.post.image)
 
     def test_post_not_appearing_not_subscribed(self):
-        """Пост автора не появляется в ленте тех, кто не подписан."""
-        self.assertNotIn(
-            self.post,
-            self.another.get(FOLLOW).context['page_obj']
-        )
+        """Пост автора не появляется в ленте тех, кто не подписан
+         и чужой групп-ленте."""
+        cases = [FOLLOW, GROUP_LIST_2]
+        for route in cases:
+            with self.subTest(route=route):
+                self.assertNotIn(
+                    self.post,
+                    self.another.get(route).context['page_obj']
+                )
 
     def test_profile_pages_show_correct_context(self):
         """Автор в контексте Профиля."""
@@ -118,8 +122,7 @@ class PostPagesTests(TestCase):
     def test_cache_index(self):
         """Тест кэширования страницы index"""
         first_request = self.another.get(INDEX)
-        post = first_request.context['page_obj'][0]
-        Post.objects.filter(id=post.id).delete()
+        Post.objects.all().delete()
         second_request = self.another.get(INDEX)
         self.assertEqual(first_request.content, second_request.content)
         cache.clear()
@@ -129,28 +132,27 @@ class PostPagesTests(TestCase):
     def test_author_client_add_delete_subscription_to_the_author(self):
         """Авторизованный пользователь может подписываться
         на других пользователей."""
-        follow_exists = Follow.objects.filter(
-            user=self.user, author=self.author
-        ).exists()
+        self.assertFalse(
+            Follow.objects.filter(user=self.user, author=self.author)
+        )
         self.another.get(PROFILE_FOLLOW)
-        self.assertNotEqual(
-            Follow.objects.filter(user=self.user, author=self.author).exists(),
-            follow_exists
+        self.assertTrue(
+            Follow.objects.filter(user=self.user, author=self.author)
         )
 
     def test_author_client_add_delete_subscription_to_the_author(self):
         """Авторизованный пользователь может удалять авторов из подписки."""
         Follow.objects.create(user=self.user, author=self.author)
-        follow_exists = Follow.objects.filter(
-            user=self.user, author=self.author
-        ).exists()
+        self.assertTrue(
+            Follow.objects.filter(user=self.user, author=self.author)
+        )
         self.another.get(PROFILE_UNFOLLOW)
-        self.assertNotEqual(
-            Follow.objects.filter(user=self.user, author=self.author).exists(),
-            follow_exists
+        self.assertFalse(
+            Follow.objects.filter(user=self.user, author=self.author)
         )
 
     def test_paginator_count_posts(self):
+        Post.objects.all().delete()
         Post.objects.bulk_create(
             Post(
                 author=self.author,
@@ -160,22 +162,20 @@ class PostPagesTests(TestCase):
             for count in range(POSTS_NUMBER + REST_POSTS)
         )
         Follow.objects.create(user=self.user, author=self.author)
-        rest_posts = Post.objects.count() - POSTS_NUMBER
         cases = [
             [INDEX, POSTS_NUMBER],
-            [f'{INDEX}?page=2', rest_posts],
+            [f'{INDEX}?page=2', REST_POSTS],
             [GROUP_LIST, POSTS_NUMBER],
-            [f'{GROUP_LIST}?page=2', rest_posts],
+            [f'{GROUP_LIST}?page=2', REST_POSTS],
             [PROFILE, POSTS_NUMBER],
-            [f'{PROFILE}?page=2', rest_posts],
+            [f'{PROFILE}?page=2', REST_POSTS],
             [FOLLOW, POSTS_NUMBER],
-            [f'{FOLLOW}?page=2', rest_posts]
+            [f'{FOLLOW}?page=2', REST_POSTS]
         ]
 
-        for url_1, number_posts in cases:
-            with self.subTest(url_1=url_1):
+        for url, number_posts in cases:
+            with self.subTest(url=url):
                 self.assertEqual(
-                    len(self.another.get
-                        (url_1).context['page_obj']),
+                    len(self.another.get(url).context['page_obj']),
                     number_posts
                 )

@@ -5,7 +5,7 @@
 {% block content %}
 {% include 'posts/includes/switcher.html' with index=True %}
   {% for post in page_obj %}
-    {% include 'posts/includes/post_list.html' with show_group_link=True show_author_link=True %}
+    {% include 'posts/includes/post.html' %}
     {% if not forloop.last %}<hr>{% endif %}
   {% endfor %}
   {% include 'posts/includes/paginator.html' %}
