@@ -8,11 +8,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from ..models import User, Post, Group, Comment
-from ..urls import app_name
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 USERNAME = 'auth'
 LOGIN = reverse('users:login')
+IMAGES_DIRECTORY = Post._meta.get_field('image').upload_to
 SMALL_GIF = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
     b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -100,7 +100,8 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author, self.author)
         self.assertEqual(
-            post.image.name, '{}/{}'.format(app_name, form_data['image'].name)
+            post.image.name,
+            '{}{}'.format(IMAGES_DIRECTORY, form_data['image'].name)
         )
 
     def test_create_post_pages_show_correct_context(self):
@@ -144,7 +145,8 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(post.group.id, form_data['group'])
         self.assertEqual(post.author, self.post.author)
         self.assertEqual(
-            post.image.name, '{}/{}'.format(app_name, form_data['image'].name)
+            post.image.name,
+            '{}{}'.format(IMAGES_DIRECTORY, form_data['image'].name)
         )
 
     def test_authorized_user_can_comment(self):
@@ -168,7 +170,7 @@ class PostCreateFormTests(TestCase):
 
     def test_an_unauthorized_user_cannot_comment(self):
         """Неавторизированный пользователь не может комментировать."""
-        comments_count = Comment.objects.count()
+        comments = set(Comment.objects.all())
         form_data = {
             'text': 'Тестовый комментарий',
         }
@@ -178,12 +180,11 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertRedirects(response, self.REDIRECT_ADD_COMMENT)
-        self.assertEqual(Comment.objects.count(), comments_count)
-        self.assertFalse(Comment.objects.filter(text=form_data['text']))
+        self.assertFalse(set(Comment.objects.all()) - comments)
 
     def test_an_unauthorized_user_cannot_create_a_post(self):
         """Неавторизированный пользователь не может создать пост."""
-        posts_count = Post.objects.count()
+        posts = set(Post.objects.all())
         form_data = {
             'text': 'Тестовый пост неавторизированного пользователя',
             'group': self.group_2.id,
@@ -195,15 +196,11 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertRedirects(response, self.REDIRECT_POST_CREATE)
-        self.assertEqual(Post.objects.count(), posts_count)
-        self.assertFalse(Post.objects.filter(
-            text=form_data['text'],
-            group=form_data['group'],
-            image=form_data['image']
-        ))
+        self.assertFalse(set(Post.objects.all()) - posts)
 
     def test_an_unauthorized_user_cannot_edit_a_post(self):
         """Неавторизированный пользователь не может редактировать пост."""
+        posts = set(Post.objects.values_list('id', 'text', 'group'))
         cases = [
             (self.guest, self.REDIRECT_POST_EDIT),
             (self.another, self.POST_DETAIL)
@@ -213,19 +210,14 @@ class PostCreateFormTests(TestCase):
             'group': self.group_2.id,
             'image': self.uploaded_3
         }
-        response = self.guest.post(
-            self.POST_EDIT,
-            data=form_data,
-            follow=True
-        )
-        for user, route in cases:
-            response = user.post(
+        for client, route in cases:
+            response = client.post(
                 self.POST_EDIT,
                 data=form_data,
                 follow=True
             )
-            with self.subTest(user=user):
+            with self.subTest(client=client):
                 self.assertRedirects(response, route)
-                self.assertNotEqual(self.post.text, form_data['text'])
-                self.assertNotEqual(self.post.group, form_data['group'])
-                self.assertNotEqual(self.post.image, form_data['image'])
+                self.assertEqual(
+                    set(Post.objects.values_list('id', 'text', 'group')), posts
+                )

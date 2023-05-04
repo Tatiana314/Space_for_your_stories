@@ -78,13 +78,10 @@ class PostPagesTests(TestCase):
             with self.subTest(adress=adress):
                 response = self.another.get(adress)
                 if context_element == 'page_obj':
-                    self.assertIn(
-                        self.post, response.context[context_element]
+                    self.assertEqual(
+                        len(response.context[context_element].object_list), 1
                     )
-                    list_page_obj = (
-                        response.context[context_element]
-                    )
-                    post = list_page_obj[list_page_obj.index(self.post)]
+                    post = response.context.get(context_element)[0]
                 else:
                     post = response.context.get('post')
                 self.assertEqual(post.pk, self.post.pk)
@@ -93,9 +90,9 @@ class PostPagesTests(TestCase):
                 self.assertEqual(post.author, self.post.author)
                 self.assertEqual(post.image, self.post.image)
 
-    def test_post_not_appearing_not_subscribed(self):
+    def test_post_not_appearing_not_subscribed_and_other_group(self):
         """Пост автора не появляется в ленте тех, кто не подписан
-         и чужой групп-ленте."""
+         и в чужой групп-ленте."""
         cases = [FOLLOW, GROUP_LIST_2]
         for route in cases:
             with self.subTest(route=route):

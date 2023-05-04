@@ -1,7 +1,7 @@
 {% load thumbnail %}
 <article>
   <ul>
-    {% if not show_author_link %}
+    {% if not hide_author_link %}
       <li>
         <a href="{% url 'posts:profile' post.author.username %}">Автор: {{ post.author.get_full_name }}</a>
       </li>
@@ -9,7 +9,7 @@
     <li>
       Дата публикации: {{ post.pub_date|date:"d E Y" }}
     </li>
-    {% if not show_group_link and post.group %}
+    {% if not hide_group_link and post.group %}
       <li>
         <a href="{% url 'posts:group_list' post.group.slug %}">#{{post.group}}</a>
       </li>

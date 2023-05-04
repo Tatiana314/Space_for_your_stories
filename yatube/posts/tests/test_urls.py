@@ -70,7 +70,7 @@ class PostsURLTests(TestCase):
 
         ]
         for adress, client, code in cases:
-            with self.subTest(code=code, adress=adress):
+            with self.subTest(code=code, adress=adress, client=client):
                 self.assertEqual(
                     client.get(adress).status_code, code
                 )
