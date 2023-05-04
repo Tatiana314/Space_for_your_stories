@@ -1,5 +1,7 @@
+from django.contrib import auth
 from django.test import TestCase, Client
 from django.urls import reverse
+
 
 from ..models import User, Group, Post
 
@@ -70,7 +72,9 @@ class PostsURLTests(TestCase):
 
         ]
         for adress, client, code in cases:
-            with self.subTest(code=code, adress=adress, client=client):
+            with self.subTest(
+                code=code, adress=adress, client=auth.get_user(client).username
+            ):
                 self.assertEqual(
                     client.get(adress).status_code, code
                 )
@@ -107,7 +111,11 @@ class PostsURLTests(TestCase):
             [PROFILE_UNFOLLOW, self.guest, REDIRECT_PROFILE_UNFOLLOW],
         ]
         for adress, client, new_adress in input_data:
-            with self.subTest(adress=adress, new_adress=new_adress):
+            with self.subTest(
+                client=auth.get_user(client).username,
+                adress=adress,
+                new_adress=new_adress
+            ):
                 self.assertRedirects(
                     client.get(adress, follow=True),
                     new_adress

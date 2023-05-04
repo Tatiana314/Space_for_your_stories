@@ -42,15 +42,16 @@ class PostCreateFormTests(TestCase):
             title=('Заголовок для тестовой группы 2'),
             slug='test_slug_2'
         )
-        cls.post = Post.objects.create(
-            text='Тестовый пост',
-            group=cls.group_1,
-            author=cls.author,
-        )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
             content=SMALL_GIF,
             content_type='image/gif'
+        )
+        cls.post = Post.objects.create(
+            text='Тестовый пост',
+            group=cls.group_1,
+            author=cls.author,
+            image=cls.uploaded
         )
         cls.uploaded_2 = SimpleUploadedFile(
             name='small_2.gif',
@@ -59,6 +60,11 @@ class PostCreateFormTests(TestCase):
         )
         cls.uploaded_3 = SimpleUploadedFile(
             name='small_3.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
+        cls.uploaded_4 = SimpleUploadedFile(
+            name='small_4.gif',
             content=SMALL_GIF,
             content_type='image/gif'
         )
@@ -84,7 +90,7 @@ class PostCreateFormTests(TestCase):
         form_data = {
             'text': 'Тестовый пост 2',
             'group': self.group_1.id,
-            'image': self.uploaded,
+            'image': self.uploaded_4,
         }
         response = self.author_client.post(
             POST_CREATE,
@@ -213,6 +219,7 @@ class PostCreateFormTests(TestCase):
             with self.subTest(client=client):
                 self.assertRedirects(response, url)
                 post = Post.objects.get(id=self.post.id)
-                self.assertNotEqual(post.text, form_data['text'])
-                self.assertNotEqual(post.group.id, form_data['group'])
-                self.assertNotEqual(post.image, form_data['image'])
+                self.assertEqual(post.text, self.post.text)
+                self.assertEqual(post.author, self.post.author)
+                self.assertEqual(post.group.id, self.post.group.id)
+                self.assertEqual(post.image, self.post.image)
