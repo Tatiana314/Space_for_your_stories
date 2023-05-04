@@ -143,6 +143,8 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+IMAGES_DIRECTORY = 'posts/'
+
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 CACHES = {

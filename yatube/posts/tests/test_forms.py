@@ -12,7 +12,6 @@ from ..models import User, Post, Group, Comment
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 USERNAME = 'auth'
 LOGIN = reverse('users:login')
-IMAGES_DIRECTORY = Post._meta.get_field('image').upload_to
 SMALL_GIF = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
     b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -101,7 +100,7 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(post.author, self.author)
         self.assertEqual(
             post.image.name,
-            '{}{}'.format(IMAGES_DIRECTORY, form_data['image'].name)
+            '{}{}'.format(settings.IMAGES_DIRECTORY, form_data['image'].name)
         )
 
     def test_create_post_pages_show_correct_context(self):
@@ -146,7 +145,7 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(post.author, self.post.author)
         self.assertEqual(
             post.image.name,
-            '{}{}'.format(IMAGES_DIRECTORY, form_data['image'].name)
+            '{}{}'.format(settings.IMAGES_DIRECTORY, form_data['image'].name)
         )
 
     def test_authorized_user_can_comment(self):
@@ -180,7 +179,7 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertRedirects(response, self.REDIRECT_ADD_COMMENT)
-        self.assertFalse(set(Comment.objects.all()) - comments)
+        self.assertEqual(set(Comment.objects.all()), comments)
 
     def test_an_unauthorized_user_cannot_create_a_post(self):
         """Неавторизированный пользователь не может создать пост."""
@@ -196,28 +195,24 @@ class PostCreateFormTests(TestCase):
             follow=True
         )
         self.assertRedirects(response, self.REDIRECT_POST_CREATE)
-        self.assertFalse(set(Post.objects.all()) - posts)
+        self.assertEqual(set(Post.objects.all()), posts)
 
     def test_an_unauthorized_user_cannot_edit_a_post(self):
         """Неавторизированный пользователь не может редактировать пост."""
-        posts = set(Post.objects.values_list('id', 'text', 'group'))
         cases = [
             (self.guest, self.REDIRECT_POST_EDIT),
-            (self.another, self.POST_DETAIL)
+            (self.another, self.POST_DETAIL),
         ]
         form_data = {
             'text': 'Измененный пост',
             'group': self.group_2.id,
             'image': self.uploaded_3
         }
-        for client, route in cases:
-            response = client.post(
-                self.POST_EDIT,
-                data=form_data,
-                follow=True
-            )
+        for client, url in cases:
+            response = client.post(self.POST_EDIT, data=form_data, follow=True)
             with self.subTest(client=client):
-                self.assertRedirects(response, route)
-                self.assertEqual(
-                    set(Post.objects.values_list('id', 'text', 'group')), posts
-                )
+                self.assertRedirects(response, url)
+                post = Post.objects.get(id=self.post.id)
+                self.assertNotEqual(post.text, form_data['text'])
+                self.assertNotEqual(post.group.id, form_data['group'])
+                self.assertNotEqual(post.image, form_data['image'])
