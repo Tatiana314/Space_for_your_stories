@@ -2,7 +2,6 @@ from django.contrib import auth
 from django.test import TestCase, Client
 from django.urls import reverse
 
-
 from ..models import User, Group, Post
 
 SLUG = 'test_slug'
