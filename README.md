@@ -11,7 +11,7 @@ Space_for_your_stories —  это проект социальной сети, �
 
 ### Технологии
 [![Django](https://img.shields.io/badge/Django-4.2.1-blue?logo=python)](https://www.djangoproject.com/)
-[![pytest-django](https://img.shields.io/badge/pytest_django-4.4.0?logo=Python)](https://pypi.org/project/pytest-django/)
+[![pytest-django](https://img.shields.io/badge/pytest-django?logo=Python)](https://pypi.org/project/pytest-django/)
 
 
 ### Запуск проекта:
