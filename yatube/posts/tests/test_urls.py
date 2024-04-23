@@ -1,8 +1,9 @@
 from django.contrib import auth
-from django.test import TestCase, Client
+from django.core.cache import cache
+from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import User, Group, Post
+from ..models import Group, Post, User
 
 SLUG = 'test_slug'
 USERNAME = 'auth'
@@ -47,7 +48,7 @@ class PostsURLTests(TestCase):
         self.another.force_login(self.user)
         self.author_client.force_login(self.author)
 
-    def test_url_exists_at_desired_location_unauthorized_client(self):
+    def test_page_status_code(self):
         """Доступ страниц пользователям."""
         cases = [
             [INDEX, self.guest, 200],
@@ -80,13 +81,13 @@ class PostsURLTests(TestCase):
 
     def test_posts_urls_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
+        cache.clear()
         cases = [
             [self.POST_EDIT, self.author_client, 'posts/create_post.html'],
             [INDEX, self.another, 'posts/index.html'],
             [GROUP_LIST, self.another, 'posts/group_list.html'],
             [PROFILE, self.another, 'posts/profile.html'],
-            [self.POST_DETAIL, self.another,
-             'posts/post_detail.html'],
+            [self.POST_DETAIL, self.another, 'posts/post_detail.html'],
             [POST_CREATE, self.another, 'posts/create_post.html'],
             [FOLLOW, self.another, 'posts/follow.html'],
         ]

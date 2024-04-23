@@ -20,17 +20,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '0_c*eof^u)0z_u_w-j)8oz+j%!0=5275@per(g$6wo5oeshx%5'
+SECRET_KEY = os.getenv('SECRET_KEY', 'paste_your_code')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '[::1]',
-    'testserver',
-]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split()
 
 
 # Application definition
@@ -47,6 +42,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'about.apps.AboutConfig',
     'sorl.thumbnail',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +53,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+]
+
+INTERNAL_IPS = [
+    '127.0.0.1',
 ]
 
 ROOT_URLCONF = 'yatube.urls'
@@ -152,3 +153,5 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

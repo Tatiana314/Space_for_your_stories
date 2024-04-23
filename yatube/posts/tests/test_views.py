@@ -1,10 +1,10 @@
-from django.test import Client, TestCase
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from ..constants import POSTS_NUMBER
-from ..models import User, Post, Group, Follow
+from ..models import Follow, Group, Post, User
 
 REST_POSTS = 3
 SLUG = 'test_slug'

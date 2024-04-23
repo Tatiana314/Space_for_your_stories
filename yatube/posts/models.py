@@ -1,8 +1,7 @@
-from django.contrib.auth import get_user_model
-from django.conf import settings
-from django.db import models
 from core.models import CreatedModel
-
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 POST_DATA = '{text:.15}, {date:%Y-%m-%d}, {author}, {group}'
@@ -28,16 +27,6 @@ class Group(models.Model):
 
 
 class Post(CreatedModel):
-    text = models.TextField(
-        verbose_name='Текст поста',
-        help_text='Введите текст поста'
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='posts',
-        verbose_name='Автор',
-    )
     group = models.ForeignKey(
         Group,
         blank=True,
@@ -73,16 +62,6 @@ class Comment(CreatedModel):
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Комментарий',
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name='Автор комментария',
-    )
-    text = models.TextField(
-        verbose_name='Текст комментария',
-        help_text='Текст нового комментария',
     )
 
     class Meta(CreatedModel.Meta):

@@ -1,7 +1,7 @@
 from django.test import TestCase
 
-from ..models import User, Group, Post, Comment, Follow
-from ..models import POST_DATA, COMMENT_DATA, FOLLOW_DATA
+from ..models import (COMMENT_DATA, FOLLOW_DATA, POST_DATA, Comment, Follow,
+                      Group, Post, User)
 
 
 class PostModelTest(TestCase):
