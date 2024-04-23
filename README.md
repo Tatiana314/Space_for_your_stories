@@ -65,8 +65,8 @@ python manage.py migrate && python manage.py runserver
 - http://127.0.0.1:8000/posts/{post_id}/edit/ - страница поста, с формой для редактирования;
 - http://127.0.0.1:8000/posts/{post_id}/comment/ - все комментарии определенного поста;
 - http://127.0.0.1:8000/follow/ - посты всех авторов, на которых подписан пользователь;
-http://127.0.0.1:8000/profile/{username}/follow/ - подписка пользователя на автора;
-http://127.0.0.1:8000/profile/{username}/unfollow/ - отписка пользователя от автора;
+- http://127.0.0.1:8000/profile/{username}/follow/ - подписка пользователя на автора;
+- http://127.0.0.1:8000/profile/{username}/unfollow/ - отписка пользователя от автора;
 
 ## Автор
 [Мусатова Татьяна](https://github.com/Tatiana314)
