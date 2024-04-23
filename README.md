@@ -43,7 +43,7 @@ DEBUG=True
 ```
 Выполнить миграции и запустить проект:
 ```
-python manage.py migrate && python manage.py runserver
+python yatube/manage.py migrate && python yatube/manage.py runserver
 ```
 После запуска, проект доступен по адресу: http://127.0.0.1:8000/.
 
